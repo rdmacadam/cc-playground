@@ -41,7 +41,7 @@ export const AUTOPILOT_LFOS = [
 
 export const AUTOPILOT_PATCH = [
   { param: 'frequency', source: 'lfo1', depth: 0.22 },
-  { param: 'hue', source: 'lfo2', depth: 0.5 },
+  { param: 'hue', source: 'lfo2', depth: 0.12 },
   { param: 'chaos', source: 'lfo3', depth: 0.2 },
   { param: 'amplitude', source: 'lfo3', depth: 0.15 },
   { param: 'flow', source: 'lfo4', depth: 0.2 },

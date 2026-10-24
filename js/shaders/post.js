@@ -15,7 +15,7 @@ void main() {
                  + texture2D(u_src, v_uv + u_texel * vec2(-1.0, 1.0)).rgb
                  + texture2D(u_src, v_uv + u_texel * vec2(1.0, 1.0)).rgb);
   float l = dot(c, vec3(0.2126, 0.7152, 0.0722));
-  gl_FragColor = vec4(c * smoothstep(0.35, 1.0, l), 1.0);
+  gl_FragColor = vec4(c * smoothstep(0.42, 1.1, l), 1.0);
 }`;
 
 export const BLUR_FS = `
@@ -57,7 +57,7 @@ void main() {
   c += texture2D(u_bloom, v_uv).rgb * u_glow * (1.0 + u_beat * 0.8);
   vec2 q = (v_uv - 0.5) * vec2(u_res.x / u_res.y, 1.0);
   c *= mix(0.5, 1.0, smoothstep(1.0, 0.25, length(q)));
-  c = aces(c * 1.15);
+  c = aces(c * 1.05);
   c = pow(c, vec3(0.95));
   vec2 px = v_uv * u_res;
   c += (hash(px + fract(u_time * 7.13) * 113.0) - 0.5) * 0.03;

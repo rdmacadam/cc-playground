@@ -33,14 +33,18 @@ void main() {
   float iri = 0.5 + 0.5 * sin(dot(w, vec2(1.3, 0.7)) * 1.7 + u_time * 0.05);
   vec3 pos = mix(u_c1, u_c2, iri * 0.35);
   vec3 neg = mix(u_c2, u_c1, iri * 0.35);
-  float body = 0.55 + 0.45 * u_amp;
 
-  vec3 col = u_c0;
-  col = mix(col, pos, smoothstep(0.0, 0.95, s) * body);
-  col = mix(col, neg, smoothstep(0.0, 0.95, -s) * body);
-  col = mix(col, mix(col, u_c3, 0.5), halo * 0.6);
-  col = mix(col, u_c3, line * (0.65 + 0.35 * u_amp));
-  col += u_c4 * pow(line, 6.0) * (0.35 + 0.6 * u_amp);
+  float a = abs(s);
+  vec3 tone = s > 0.0 ? pos : neg;
+  float body = smoothstep(0.05, 0.95, a);
+  vec3 col = mix(u_c0, tone, pow(body, 1.4) * (0.5 + 0.45 * u_amp));
+  // A dark valley hugs each ribbon, then the ribbon itself glows.
+  col = mix(col, u_c0 * 0.6, halo * (1.0 - line) * 0.55);
+  // Ribbons shimmer between the ribbon and antinode hues as color travels along them.
+  float iri2 = 0.5 + 0.5 * sin(dot(w, vec2(-0.8, 1.6)) * 2.3 - u_time * 0.11 + s * 3.0);
+  vec3 ribbon = mix(u_c3, mix(u_c3, u_c1, 0.7), iri2);
+  col = mix(col, ribbon, line * (0.6 + 0.35 * u_amp));
+  col += u_c4 * pow(line, 10.0) * (0.12 + 0.3 * u_amp);
   col = mix(u_c0 * 0.7, col, u_fieldMix);
 
   // Feedback: previous frame, nudged along the flow, melts into the new one.

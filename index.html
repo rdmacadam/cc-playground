@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Chladni — Living Figures</title>
+  <meta name="description" content="Chladni figures as living, melting visual art. Play with frequency, chaos and color, or let music shape the plate.">
+  <meta name="theme-color" content="#05060f">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,500;1,600&family=Inter:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <canvas id="stage" aria-label="Animated Chladni figure"></canvas>
+
+  <div id="signature" class="signature" aria-hidden="true">
+    <span class="sig-title">Chladni</span>
+    <span class="sig-sub" id="sig-sub">living figures</span>
+  </div>
+
+  <aside id="panel" class="panel" aria-label="Controls"></aside>
+  <button id="panel-open" class="panel-open" type="button" aria-label="Show controls" title="Show controls (H)">✦</button>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <div id="drop-hint" class="drop-hint" aria-hidden="true"><span>Drop audio and let the plate sing</span></div>
+
+  <div id="fallback" class="fallback" hidden>
+    <h1>Chladni</h1>
+    <p id="fallback-msg">This device can't run the WebGL renderer the figures need.</p>
+    <p class="muted">Try a recent Chrome, Edge, Firefox or Safari with hardware acceleration enabled.</p>
+  </div>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
