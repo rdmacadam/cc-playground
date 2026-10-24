@@ -1,0 +1,12 @@
+{
+  "name": "chladni-living-art",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Chladni figures as living, melting visual art",
+  "scripts": {
+    "test": "node --test \"test/*.test.js\"",
+    "e2e": "node test/e2e/run.mjs",
+    "serve": "node test/e2e/server.mjs"
+  }
+}
