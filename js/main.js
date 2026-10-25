@@ -161,7 +161,8 @@ function frame(now) {
   const signals = audio.update(dt);
   const sources = evaluateSources(matrix, signals);
   const offsets = computeOffsets(matrix, sources, { skip: held, disabledTags });
-  stepParams(state, PARAMS, offsets, sdt);
+  // Pause freezes time and LFOs, but sliders still glide: sculpt a still figure.
+  stepParams(state, PARAMS, offsets, dt);
   const p = state.value;
 
   // Every palette change, pinned or cycling, melts over ~1.2 s.
@@ -199,6 +200,7 @@ Object.assign(debug, {
   get scale() { return scale; },
   sandSupported: renderer.sandSupported,
   setDisplay: m => { settings.display = m; ui.setDisplay(m); },
+  setPaused: on => { settings.paused = on; },
 });
 
 requestAnimationFrame(frame);

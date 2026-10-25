@@ -12,7 +12,7 @@ export const PALETTES = [
   make('Aurora', ['#05060f', '#1ec8b0', '#7b3fe4', '#ff4fd8', '#fff4fb']),
   make('Ember', ['#0a0302', '#c2261b', '#5a0b2e', '#ffb238', '#fff1c9']),
   make('Abyss', ['#01040c', '#0b3a6e', '#0a1b3f', '#3ff3ff', '#e8ffff']),
-  make('Opal', ['#14121c', '#f2c6de', '#a6d8ef', '#fff6e0', '#ffffff']),
+  make('Opal', ['#0f0d18', '#c48bb4', '#6fa6cf', '#fff1e0', '#ffffff']),
   make('Nebula', ['#07041a', '#3b2a8c', '#b8336a', '#ffb057', '#ffe9f1']),
 ];
 
