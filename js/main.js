@@ -136,13 +136,32 @@ window.addEventListener('drop', e => {
 canvas.addEventListener('webglcontextlost', e => { e.preventDefault(); ui.toast('Graphics were reset — reloading…'); });
 canvas.addEventListener('webglcontextrestored', () => location.reload());
 
+// Inside a hosted viewer (claude.ai artifact) saves go through its download prompt.
+let hostDownloads = null;
+window.claude?.use?.('downloads').then(d => { hostDownloads = d; }, () => {});
+
+function dataUrlToBlob(dataUrl) {
+  const bytes = atob(dataUrl.slice(dataUrl.indexOf(',') + 1));
+  const buf = new Uint8Array(bytes.length);
+  for (let i = 0; i < bytes.length; i++) buf[i] = bytes.charCodeAt(i);
+  return new Blob([buf], { type: 'image/png' });
+}
+
 function download(dataUrl) {
+  const filename = `chladni-${new Date().toISOString().replace(/[:.]/g, '-')}.png`;
+  if (hostDownloads) {
+    hostDownloads.save({ filename, data: dataUrlToBlob(dataUrl) })
+      .then(() => ui.toast('Image saved', 1600))
+      .catch(e => { if (e?.code !== 'declined') ui.toast('Saving images is not available here'); });
+    return;
+  }
   const a = document.createElement('a');
   a.href = dataUrl;
-  a.download = `chladni-${new Date().toISOString().replace(/[:.]/g, '-')}.png`;
+  a.download = filename;
   document.body.append(a);
   a.click();
   a.remove();
+  ui.toast('Image saved', 1600);
 }
 
 // ----- frame loop -----
@@ -187,7 +206,6 @@ function frame(now) {
   if (captureRequested) {
     captureRequested = false;
     download(renderer.capture());
-    ui.toast('Image saved', 1600);
   }
 
   ui.update(p, { sources, offsets });
