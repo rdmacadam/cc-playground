@@ -4,7 +4,7 @@ Chladni figures, the patterns sand draws on a vibrating plate, rendered as
 living, melting light. The figure dreams by itself on autopilot, morphs as you
 move the sliders, and can listen to music or your voice.
 
-![Chladni living figures](docs/screenshot.png)
+![Chladni living figures](docs/screenshot.jpg)
 
 ## Run it
 
