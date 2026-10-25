@@ -1,11 +1,11 @@
 // The hero layer: field → palette colors, blended with the flowing previous frame.
 
-import { FIELD_GLSL, FULLSCREEN_VS } from './common.js';
+import { FIELD_GLSL, FULLSCREEN_VS, FRAG_PRECISION } from './common.js';
 
 export const FIELD_VS = FULLSCREEN_VS;
 
 export const FIELD_FS = `
-precision highp float;
+${FRAG_PRECISION}
 ${FIELD_GLSL}
 uniform sampler2D u_prev;
 uniform vec2 u_view;

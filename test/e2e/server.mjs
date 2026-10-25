@@ -1,7 +1,7 @@
 // Tiny static server for local viewing and E2E tests (mic works on localhost).
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
-import { extname, join, normalize, resolve } from 'node:path';
+import { extname, join, normalize, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = resolve(fileURLToPath(new URL('../..', import.meta.url)));
@@ -10,11 +10,19 @@ const TYPES = {
   '.css': 'text/css; charset=utf-8', '.png': 'image/png', '.svg': 'image/svg+xml', '.json': 'application/json',
 };
 
+// Maps a URL path to a file inside root, or null for anything outside it or hidden (.git, .env…).
+export function resolveSafe(root, urlPath) {
+  const file = normalize(join(root, urlPath.endsWith('/') ? `${urlPath}index.html` : urlPath));
+  if (!file.startsWith(root + sep)) return null;
+  if (file.slice(root.length + 1).split(sep).some(part => part.startsWith('.'))) return null;
+  return file;
+}
+
 export function startServer(port = Number(process.env.PORT) || 5173) {
   const server = createServer(async (req, res) => {
     const path = decodeURIComponent(new URL(req.url, 'http://x').pathname);
-    const file = normalize(join(ROOT, path.endsWith('/') ? `${path}index.html` : path));
-    if (!file.startsWith(ROOT)) { res.writeHead(403).end(); return; }
+    const file = resolveSafe(ROOT, path);
+    if (!file) { res.writeHead(404).end('not found'); return; }
     try {
       const body = await readFile(file);
       res.writeHead(200, { 'content-type': TYPES[extname(file)] || 'application/octet-stream', 'cache-control': 'no-store' });
@@ -23,10 +31,11 @@ export function startServer(port = Number(process.env.PORT) || 5173) {
       res.writeHead(404).end('not found');
     }
   });
-  return new Promise(ok => server.listen(port, () => ok(server)));
+  // Loopback only: this is a dev server, not something to expose on the local network.
+  return new Promise(ok => server.listen(port, '127.0.0.1', () => ok(server)));
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
   const server = await startServer();
-  console.log(`Chladni running at http://localhost:${server.address().port}`);
+  console.log(`Chladni running at http://127.0.0.1:${server.address().port}`);
 }

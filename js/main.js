@@ -3,7 +3,7 @@
 import { PARAMS, getDef, createParamState, setSlider, stepParams } from './params.js';
 import {
   createModMatrix, addRoute, removeRoute, advanceLfos, evaluateSources, computeOffsets,
-  applyPatch, clearTag, AUTOPILOT_PATCH, AUDIO_PATCH,
+  applyPatch, clearTag, setRouteDepth, AUTOPILOT_PATCH, AUDIO_PATCH,
 } from './modulators.js';
 import { PRESETS, randomValues } from './presets.js';
 import { PALETTES, paletteAt } from './palettes.js';
@@ -42,7 +42,6 @@ applyPatch(matrix, AUTOPILOT_PATCH, 'auto');
 const audio = createAudioInput();
 const quality = createQualityGovernor();
 const held = new Set();
-const disabledTags = new Set();
 const settings = { pinned: null, display: 'color', paused: false };
 let colors = paletteAt(0).map(c => c.slice());
 let captureRequested = false;
@@ -56,9 +55,11 @@ async function startAudio(start, mode, okMsg) {
   try {
     await start();
     clearTag(matrix, 'audio');
-    applyPatch(matrix, AUDIO_PATCH, 'audio');
+    const refused = applyPatch(matrix, AUDIO_PATCH, 'audio');
     ui.setAudioMode(mode);
-    ui.toast(okMsg);
+    ui.toast(refused.length
+      ? `${okMsg}. Sound could not reach ${[...new Set(refused.map(r => getDef(r.param).label))].join(', ')}: each slider takes two sources.`
+      : okMsg, refused.length ? 5200 : 3200);
   } catch (e) {
     ui.setAudioMode(audio.mode);
     ui.toast(e.message || 'Audio could not start.');
@@ -86,12 +87,21 @@ const ui = createUI({
     onRandom: () => { setValues(randomValues()); ui.markPreset(-1); },
     onPalette: i => { settings.pinned = i; },
     onDisplay: m => { settings.display = m; },
-    onAutopilot: on => (on ? disabledTags.delete('auto') : disabledTags.add('auto')),
+    // Switching autopilot off removes its routes, freeing their slots for sound or your own links.
+    onAutopilot: on => {
+      if (on) applyPatch(matrix, AUTOPILOT_PATCH, 'auto');
+      else clearTag(matrix, 'auto');
+      ui.syncSliders();
+    },
     onMic: () => startAudio(() => audio.startMic(), 'mic', 'Listening — sing, speak or play something'),
     onFile: file => startAudio(() => audio.startFile(file), 'file', `Playing ${file.name}`),
     onAudioOff: () => { audio.stop(); clearTag(matrix, 'audio'); ui.setAudioMode('off'); },
     onCapture: () => { captureRequested = true; },
-    onRoute: (id, source, depth) => (depth === null ? removeRoute(matrix, id, source) : addRoute(matrix, id, source, depth, 'user')),
+    onRoute: (id, source, depth) => {
+      if (depth === null) removeRoute(matrix, id, source);
+      else if ((matrix.routes[id] || []).some(r => r.source === source)) setRouteDepth(matrix, id, source, depth);
+      else addRoute(matrix, id, source, depth, 'user');
+    },
     onLfo: (i, cfg) => Object.assign(matrix.lfos[i], cfg),
   },
 });
@@ -160,7 +170,7 @@ function frame(now) {
   advanceLfos(matrix, sdt);
   const signals = audio.update(dt);
   const sources = evaluateSources(matrix, signals);
-  const offsets = computeOffsets(matrix, sources, { skip: held, disabledTags });
+  const offsets = computeOffsets(matrix, sources, { skip: held });
   // Pause freezes time and LFOs, but sliders still glide: sculpt a still figure.
   stepParams(state, PARAMS, offsets, dt);
   const p = state.value;

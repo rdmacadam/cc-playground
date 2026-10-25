@@ -8,6 +8,16 @@ void main() {
   gl_Position = vec4(a_pos, 0.0, 1.0);
 }`;
 
+// Fragment highp is optional in WebGL1; samplers default to lowp, which would round float state.
+export const FRAG_PRECISION = `
+#ifdef GL_FRAGMENT_PRECISION_HIGH
+precision highp float;
+precision highp sampler2D;
+#else
+precision mediump float;
+#endif
+`;
+
 export const FIELD_GLSL = `
 uniform float u_time;
 uniform vec2 u_modeA;
@@ -16,6 +26,10 @@ uniform float u_modeT;
 uniform vec2 u_chaosA;
 uniform vec2 u_chaosB;
 uniform vec2 u_chaosC;
+uniform vec2 u_chaosA2;
+uniform vec2 u_chaosB2;
+uniform vec2 u_chaosC2;
+uniform float u_chaosT;
 uniform float u_chaos;
 uniform float u_drift;
 uniform float u_amp;
@@ -67,9 +81,12 @@ float fieldAt(vec2 p) {
   vec2 q = p * (1.0 + 0.04 * u_amp * sin(t * 0.9));
   float f = mix(chladni(q, u_modeA, wa, wb), chladni(q, u_modeB, wa, wb), smoothstep(0.0, 1.0, u_modeT));
   float c = u_chaos;
-  f += c * (0.45 + 0.25 * sin(t * 0.17 + 0.5)) * chladni(q, u_chaosA, 1.0, 1.0);
-  f += c * (0.35 + 0.2 * sin(t * 0.13 + 2.1)) * chladni(q * 1.07 + 0.1, u_chaosB, 1.0, 1.0);
-  f += c * (0.25 + 0.15 * cos(t * 0.11)) * chladni(q.yx * 0.93, u_chaosC, 1.0, wa);
+  float k2 = smoothstep(0.0, 1.0, u_chaosT);
+  vec2 qb = q * 1.07 + 0.1;
+  vec2 qc = q.yx * 0.93;
+  f += c * (0.45 + 0.25 * sin(t * 0.17 + 0.5)) * mix(chladni(q, u_chaosA, 1.0, 1.0), chladni(q, u_chaosA2, 1.0, 1.0), k2);
+  f += c * (0.35 + 0.2 * sin(t * 0.13 + 2.1)) * mix(chladni(qb, u_chaosB, 1.0, 1.0), chladni(qb, u_chaosB2, 1.0, 1.0), k2);
+  f += c * (0.25 + 0.15 * cos(t * 0.11)) * mix(chladni(qc, u_chaosC, 1.0, wa), chladni(qc, u_chaosC2, 1.0, wa), k2);
   return f / (1.0 + c * 0.9);
 }
 `;

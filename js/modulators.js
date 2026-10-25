@@ -85,8 +85,15 @@ export function removeRoute(m, paramId, source) {
   m.routes[paramId] = m.routes[paramId].filter(r => r.source !== source);
 }
 
+// Returns the patch entries that found no free slot (max two sources per parameter).
 export function applyPatch(m, patch, tag) {
-  for (const { param, source, depth } of patch) addRoute(m, param, source, depth, tag);
+  return patch.filter(({ param, source, depth }) => !addRoute(m, param, source, depth, tag));
+}
+
+// Changes only the depth, so a route keeps belonging to autopilot / audio / the user.
+export function setRouteDepth(m, paramId, source, depth) {
+  const r = (m.routes[paramId] || []).find(x => x.source === source);
+  if (r) r.depth = clamp(depth, -1, 1);
 }
 
 export function clearTag(m, tag) {

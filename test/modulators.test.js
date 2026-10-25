@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   SOURCES, lfoValue, createModMatrix, addRoute, removeRoute, advanceLfos, evaluateSources,
-  computeOffsets, applyPatch, clearTag, AUTOPILOT_PATCH, AUDIO_PATCH, AUTOPILOT_LFOS,
+  computeOffsets, applyPatch, clearTag, setRouteDepth, AUTOPILOT_PATCH, AUDIO_PATCH, AUTOPILOT_LFOS,
 } from '../js/modulators.js';
 import { PRESETS, randomValues } from '../js/presets.js';
 import { PARAMS, getDef } from '../js/params.js';
@@ -111,4 +111,22 @@ test('presets and random values stay inside parameter ranges', () => {
   assert.ok(r.chaos <= 0.7);
   for (const p of PRESETS) assert.ok(['color', 'both', 'sand'].includes(p.display));
   assert.ok(PARAMS.length > 0);
+});
+
+test('editing a route depth keeps its tag so the autopilot switch still controls it', () => {
+  const m = createModMatrix();
+  applyPatch(m, AUTOPILOT_PATCH, 'auto');
+  setRouteDepth(m, 'hue', 'lfo2', 0.3);
+  const r = m.routes.hue.find(x => x.source === 'lfo2');
+  assert.equal(r.depth, 0.3);
+  assert.equal(r.tag, 'auto');
+});
+
+test('applyPatch reports routes it could not place', () => {
+  const m = createModMatrix();
+  applyPatch(m, AUTOPILOT_PATCH, 'auto');
+  addRoute(m, 'amplitude', 'lfo1', 0.2, 'user');
+  const refused = applyPatch(m, AUDIO_PATCH, 'audio');
+  assert.deepEqual(refused.map(r => `${r.param}:${r.source}`), ['amplitude:bass']);
+  assert.deepEqual(applyPatch(createModMatrix(), AUTOPILOT_PATCH, 'auto'), []);
 });

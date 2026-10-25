@@ -8,11 +8,12 @@ const OUT = new URL('./out/', import.meta.url).pathname;
 await mkdir(OUT, { recursive: true });
 
 const server = await startServer(0);
-const base = `http://localhost:${server.address().port}/`;
+const base = `http://127.0.0.1:${server.address().port}/`;
 const browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
 
 let failures = 0;
 async function check(name, fn) {
+  if (process.env.ONLY && !name.includes(process.env.ONLY)) return;
   try {
     await fn();
     console.log(`ok - ${name}`);
@@ -131,7 +132,15 @@ await check('desktop: S key saves a PNG', async () => {
 
 await check('rotation/resize reallocates buffers without errors or black frames', async () => {
   const { page, errors } = await open();
+  await page.evaluate(() => __chladni.setSlider('melt', 0.85));
+  await page.waitForTimeout(2500);
+  const before = await stats(page);
   await page.setViewportSize({ width: 900, height: 1400 });
+  // First frame rendered at the new size: no dark dip while the feedback buffer refills.
+  await page.waitForFunction(() => document.getElementById('stage').height === 1400);
+  await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
+  const first = await stats(page);
+  assert(first.mean > 0.8 * before.mean, `dark flash after resize (mean ${before.mean.toFixed(1)} → ${first.mean.toFixed(1)})`);
   await page.waitForTimeout(800);
   const s = await stats(page);
   const size = await page.evaluate(() => [document.getElementById('stage').width, document.getElementById('stage').height]);

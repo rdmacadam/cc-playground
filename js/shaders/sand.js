@@ -1,11 +1,11 @@
 // Sand particles: state lives in a float texture (xy = plate position, z = seed, w = age).
 
-import { FIELD_GLSL, FULLSCREEN_VS } from './common.js';
+import { FIELD_GLSL, FULLSCREEN_VS, FRAG_PRECISION } from './common.js';
 
 export const SAND_UPDATE_VS = FULLSCREEN_VS;
 
 export const SAND_UPDATE_FS = `
-precision highp float;
+${FRAG_PRECISION}
 ${FIELD_GLSL}
 uniform sampler2D u_state;
 uniform vec2 u_view;
@@ -48,6 +48,8 @@ void main() {
 }`;
 
 export const SAND_DRAW_VS = `
+precision highp float;
+precision highp sampler2D;
 attribute vec2 a_pos;
 uniform sampler2D u_state;
 uniform vec2 u_view;
@@ -61,7 +63,7 @@ void main() {
 }`;
 
 export const SAND_DRAW_FS = `
-precision highp float;
+${FRAG_PRECISION}
 uniform vec3 u_color;
 uniform float u_intensity;
 varying float v_fade;

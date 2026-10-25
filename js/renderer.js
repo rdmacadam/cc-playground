@@ -5,9 +5,9 @@ import {
   clearTarget, createPingPong, fullscreenTriangle,
 } from './gl.js';
 import { FIELD_VS, FIELD_FS } from './shaders/field.js';
-import { POST_VS, BRIGHT_FS, BLUR_FS, COMPOSITE_FS } from './shaders/post.js';
+import { POST_VS, COPY_FS, BRIGHT_FS, BLUR_FS, COMPOSITE_FS } from './shaders/post.js';
 import { SAND_UPDATE_VS, SAND_UPDATE_FS, SAND_DRAW_VS, SAND_DRAW_FS } from './shaders/sand.js';
-import { modeAt, chaosModes } from './field-math.js';
+import { modeAt, chaosModesAt } from './field-math.js';
 
 const SAND_SIDE = 256;
 
@@ -25,6 +25,7 @@ export function createRenderer(canvas, { forceWebGL1 = false } = {}) {
   const bright = createProgram(gl, POST_VS, BRIGHT_FS);
   const blur = createProgram(gl, POST_VS, BLUR_FS);
   const composite = createProgram(gl, POST_VS, COMPOSITE_FS);
+  const copy = createProgram(gl, POST_VS, COPY_FS);
 
   let sand = null;
   if (sandSupported) {
@@ -54,16 +55,27 @@ export function createRenderer(canvas, { forceWebGL1 = false } = {}) {
   let lastDeep = [0, 0, 0];
   let lastFrame = null;
 
+  // Resizes keep the current image (resampled) so rotation or a quality step never flashes dark.
   function allocate(rw, rh) {
-    scene?.destroy();
+    const old = scene;
     destroyTarget(gl, bloomA);
     destroyTarget(gl, bloomB);
     scene = createPingPong(ctx, rw, rh, { kind: 'color' });
     const bw = Math.max(1, rw >> 2), bh = Math.max(1, rh >> 2);
     bloomA = createTarget(ctx, bw, bh, { kind: 'color' });
     bloomB = createTarget(ctx, bw, bh, { kind: 'color' });
-    clearTarget(gl, scene.read, lastDeep);
-    clearTarget(gl, scene.write, lastDeep);
+    if (old) {
+      gl.disable(gl.BLEND);
+      gl.useProgram(copy.program);
+      setUniforms(gl, copy, { u_src: { texture: old.read.texture, unit: 0 } });
+      draw(scene.read);
+      draw(scene.write);
+      old.destroy();
+    } else {
+      clearTarget(gl, scene.read, lastDeep);
+      clearTarget(gl, scene.write, lastDeep);
+    }
+    clearTarget(gl, bloomA, [0, 0, 0]);
   }
 
   function resize(cssW, cssH, dpr, scale) {
@@ -82,10 +94,11 @@ export function createRenderer(canvas, { forceWebGL1 = false } = {}) {
 
   function fieldUniforms(time, p) {
     const m = modeAt(p.frequency);
-    const [ca, cb, cc] = chaosModes(p.frequency);
+    const c = chaosModesAt(p.frequency);
     return {
       u_time: time, u_modeA: m.a, u_modeB: m.b, u_modeT: m.t,
-      u_chaosA: ca, u_chaosB: cb, u_chaosC: cc,
+      u_chaosA: c.a[0], u_chaosB: c.a[1], u_chaosC: c.a[2],
+      u_chaosA2: c.b[0], u_chaosB2: c.b[1], u_chaosC2: c.b[2], u_chaosT: c.t,
       u_chaos: p.chaos, u_drift: p.drift, u_amp: p.amplitude, u_flow: p.flow,
       u_view: viewFor(size.rw, size.rh),
     };

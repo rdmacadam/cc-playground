@@ -1,11 +1,19 @@
 // Bloom and final composite: glow, vignette, tone mapping, grain and dither.
 
-import { FULLSCREEN_VS } from './common.js';
+import { FULLSCREEN_VS, FRAG_PRECISION } from './common.js';
 
 export const POST_VS = FULLSCREEN_VS;
 
+export const COPY_FS = `
+${FRAG_PRECISION}
+uniform sampler2D u_src;
+varying vec2 v_uv;
+void main() {
+  gl_FragColor = vec4(texture2D(u_src, v_uv).rgb, 1.0);
+}`;
+
 export const BRIGHT_FS = `
-precision highp float;
+${FRAG_PRECISION}
 uniform sampler2D u_src;
 uniform vec2 u_texel;
 varying vec2 v_uv;
@@ -19,7 +27,7 @@ void main() {
 }`;
 
 export const BLUR_FS = `
-precision highp float;
+${FRAG_PRECISION}
 uniform sampler2D u_src;
 uniform vec2 u_dir;
 varying vec2 v_uv;
@@ -33,7 +41,7 @@ void main() {
 }`;
 
 export const COMPOSITE_FS = `
-precision highp float;
+${FRAG_PRECISION}
 uniform sampler2D u_scene;
 uniform sampler2D u_bloom;
 uniform float u_glow;
